@@ -1,6 +1,7 @@
 boto3
-pandas
 requests
+pandas
+snowflake-snowpark-python[pandas]
 vaderSentiment
 langdetect
-snowflake-snowpark-python
+python-dotenv
