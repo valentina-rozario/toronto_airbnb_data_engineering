@@ -1,0 +1,6 @@
+boto3
+pandas
+requests
+vaderSentiment
+langdetect
+snowflake-snowpark-python

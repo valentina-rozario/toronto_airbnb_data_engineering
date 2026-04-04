@@ -1,0 +1,28 @@
+# --- Security & Credentials ---
+.env
+connection_config.py
+setup.sql
+creds.json
+*creds.py
+secrets.txt
+00_setup.sql
+
+# --- Python & Environments ---
+snowpark_env/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Editor & OS Junk ---
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Data Files ---
+*.csv
+*.gz
+*.zip
+*.json

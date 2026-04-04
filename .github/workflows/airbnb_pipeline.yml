@@ -1,0 +1,74 @@
+name: Toronto Airbnb ETL Pipeline
+
+on:
+  #push:
+    #branches: [ main ]  # Triggers every time you push code to the main branch
+  workflow_dispatch:    # Allows you to run it manually from the GitHub UI
+
+jobs:
+  # STEP 1: Ingest data from S3 (Python)
+  ingestion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Setting up the Python environment for AWS
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install AWS Dependencies
+        run: pip install boto3 python-dotenv
+
+      - name: Run S3 Ingestion
+        run: python 01_ingestion/s3_upload.py
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: 'us-east-1' # Change to your actual region
+
+  # STEP 2: Transform Bronze and Silver (SQL)
+  sql_transformations:
+    needs: ingestion  # Only runs if Ingestion succeeds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Execute Bronze and Silver SQL
+        uses: snowflake-labs/snowflake-action@v1.1.0
+        with:
+          account: ${{ secrets.SNOW_ACCOUNT }}
+          user: ${{ secrets.SNOW_USER }}
+          password: ${{ secrets.SNOW_PASS }}
+          role: ACCOUNTADMIN
+          warehouse: COMPUTE_WH
+          queries: |
+            SOURCE 02_bronze/bronze_tables.sql;
+            SOURCE 03_silver/silver_transformations.sql;
+
+  # STEP 3: Generate Gold Sentiment (Snowpark Python)
+  gold_sentiment:
+    needs: sql_transformations # Only runs if Silver SQL succeeds
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # We need the Snowflake and AI libraries here
+      - name: Install Snowpark and AI Libs
+        run: pip install snowflake-snowpark-python[pandas] vaderSentiment langdetect python-dotenv
+
+      - name: Run Gold Sentiment Analysis
+        run: python 04_gold/sentiment_analysis.py
+        env:
+          SNOW_ACCOUNT: ${{ secrets.SNOW_ACCOUNT }}
+          SNOW_USER: ${{ secrets.SNOW_USER }}
+          SNOW_PASS: ${{ secrets.SNOW_PASS }}
