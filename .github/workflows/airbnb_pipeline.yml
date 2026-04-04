@@ -37,21 +37,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Install Snowflake CLI
+        run: pip install snowflake-cli-labs
+
       - name: Execute Bronze and Silver SQL
-        
-        uses: snowflake-labs/snowflake-action@v1
-        with:
-          
-          account: ${{ secrets.SNOWFLAKE_ACCOUNT }}
-          user: ${{ secrets.SNOWFLAKE_USER }}
-          password: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          role: SYSADMIN
-          warehouse: COMPUTE_WH
-          
-          queries: |
-            SOURCE 02_bronze_ingestion.sql;
-            SOURCE 03_silver_transformation.sql;
-            
+        run: |
+          snow sql -q "SOURCE 02_bronze_ingestion.sql" \
+                   -q "SOURCE 03_silver_transformation.sql" \
+                   --account "${{ secrets.SNOWFLAKE_ACCOUNT }}" \
+                   --user "${{ secrets.SNOWFLAKE_USER }}" \
+                   --password "${{ secrets.SNOWFLAKE_PASSWORD }}" \
+                   --role "SYSADMIN" \
+                   --warehouse "COMPUTE_WH"
+
   # STEP 3: Generate Gold Sentiment (Snowpark Python)
   gold_sentiment:
     needs: sql_transformations
