@@ -19,15 +19,15 @@ jobs:
           python-version: '3.11'
 
       - name: Install Dependencies
-        run: pip install boto3 python-dotenv
+        
+        run: pip install boto3 python-dotenv requests pandas
 
       - name: Run S3 Ingestion
-        # FIXED PATH: Removed subfolder
         run: python 01_load_toronto_airbnb_s3.py
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: 'ca-central-1' # Toronto region is usually ca-central-1
+          AWS_REGION: 'ca-central-1'
 
   # STEP 2: Transform Bronze and Silver (SQL)
   sql_transformations:
@@ -68,7 +68,7 @@ jobs:
         run: pip install snowflake-snowpark-python[pandas] vaderSentiment langdetect python-dotenv
 
       - name: Run Gold Sentiment Analysis
-        # FIXED PATH: Matches your filename in the screenshot
+        
         run: python 04_gold_sentiment_BI.py
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
