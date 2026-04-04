@@ -1,7 +1,9 @@
 import snowflake.snowpark.functions as F
 from snowflake.snowpark import Session
-from connection_config import params
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 def run_gold_pipeline(session):
     print(f"Success! Connected to {session.get_current_database()}")
@@ -124,6 +126,25 @@ def get_params():
         "schema": "GOLD"
     }
 
+
+def get_params():
+    # Try to get credentials from GitHub environment variables first
+    user = os.getenv('SNOWFLAKE_USER')
+    password = os.getenv('SNOWFLAKE_PASSWORD')
+    account = os.getenv('SNOWFLAKE_ACCOUNT')
+    warehouse = os.getenv('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH')
+    database = os.getenv('SNOWFLAKE_DATABASE', 'AIRBNB_PROJECT')
+    role = os.getenv('SNOWFLAKE_ROLE')
+
+    return {
+        "account": account,
+        "user": user,
+        "password": password,
+        "warehouse": warehouse,
+        "database": database,
+        "schema": "GOLD",
+        "role": role
+    }
 
 
 if __name__ == "__main__":
