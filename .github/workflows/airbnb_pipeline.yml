@@ -29,27 +29,53 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: 'ca-central-1'
 
-  # STEP 2: Transform Bronze and Silver (SQL)
+# STEP 2: Transform Bronze and Silver (SQL)
   sql_transformations:
     needs: ingestion
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Snowflake CLI
-        run: pip install snowflake-cli-labs
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
 
-      - name: Execute Bronze and Silver SQL
+      - name: Install Snowflake Connector
+        run: pip install snowflake-connector-python
+
+      - name: Execute SQL Transformations
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWFLAKE_ROLE: SYSADMIN
-          SNOWFLAKE_WAREHOUSE: COMPUTE_WH
         run: |
-          snow sql --connection default -q "SOURCE 02_bronze_ingestion.sql"
-          snow sql --connection default -q "SOURCE 03_silver_transformation.sql"
+          python -c "
+          import snowflake.connector
+          import os
+
+          # Connect using the variables defined in the 'env' section above
+          ctx = snowflake.connector.connect(
+              user=os.getenv('SNOWFLAKE_USER'),
+              password=os.getenv('SNOWFLAKE_PASSWORD'),
+              account=os.getenv('SNOWFLAKE_ACCOUNT'),
+              role='SYSADMIN',
+              warehouse='COMPUTE_WH'
+          )
+          
+          def run_sql(file_path):
+              print(f'Executing {file_path}...')
+              with open(file_path, 'r') as f:
+                  # Split by semicolon to run each statement individually
+                  for query in f.read().split(';'):
+                      if query.strip():
+                          ctx.cursor().execute(query)
+
+          run_sql('02_bronze_ingestion.sql')
+          run_sql('03_silver_transformation.sql')
+          ctx.close()
+          "
 
   # STEP 3: Generate Gold Sentiment (Snowpark Python)
   gold_sentiment:
