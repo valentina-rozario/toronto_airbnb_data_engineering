@@ -15,7 +15,6 @@ CREATE SCHEMA IF NOT EXISTS airbnb_project.raw;
 USE DATABASE airbnb_project;
 USE SCHEMA raw;
 
-LIST @airbnb_toronto_stage;
 
 -- If you haven't already set up a connection with Amazon S3, which only has to be done once:
 -- Run CREATE STORAGE INTEGRATION and CREATE STAGE statements
@@ -27,7 +26,7 @@ CREATE FILE FORMAT IF NOT EXISTS airbnb_csv_gz
   FIELD_DELIMITER = ','
   RECORD_DELIMITER = '\n'
   ERROR_ON_COLUMN_COUNT_MISMATCH = FALSE
-  PARSE_HEADER = TRUE -- This effectively "skips" the header for you
+  PARSE_HEADER = TRUE 
   FIELD_OPTIONALLY_ENCLOSED_BY = '"'
   NULL_IF = ('', 'NULL');
   
@@ -46,11 +45,13 @@ CREATE FILE FORMAT IF NOT EXISTS toronto_standard_csv
 
 -- Create listings_raw table (bronze layer) in snowflake
 CREATE OR REPLACE TABLE listings_raw (
-    id NUMBER, --already an integer
+    --already an integer
+    id NUMBER, 
     listing_url STRING,
     last_scraped STRING,
     name STRING,
-    host_id NUMBER, --already an integer
+    --already an integer
+    host_id NUMBER, 
     host_name STRING,
     host_since DATE,
     host_response_time STRING,
@@ -67,7 +68,8 @@ CREATE OR REPLACE TABLE listings_raw (
     bathrooms NUMBER,
     bedrooms NUMBER,
     beds NUMBER,
-    price STRING, -- keep this as STRING first because of the '$'
+    -- keep this as STRING first because of the '$'
+    price STRING, 
     minimum_nights NUMBER,
     maximum_nights NUMBER,
     availability_30 NUMBER,
@@ -85,20 +87,22 @@ CREATE OR REPLACE TABLE listings_raw (
     license STRING
 );
 
--- 1. Build the path string (ensure it starts with the date)
-SET listings_path = (SELECT $file_date || '/listings.csv.gz');
+-- Build the path string (ensure it starts with the date)
+SET listings_regex = CONCAT('.*', $file_date, '/listings.csv.gz');
 
--- 2. Clear the table
+-- Clear the table
 TRUNCATE TABLE listings_raw;
 
--- 3. The "Standard" Way: Use the variable directly after the @stage
--- Note: There is NO slash between @stage and $listings_path
+-- Load contents into listings_raw table
 COPY INTO listings_raw
-FROM @airbnb_toronto_stage/$listings_path
+FROM @airbnb_toronto_stage
+PATTERN = $listings_regex
 FILE_FORMAT = (FORMAT_NAME = 'airbnb_csv_gz')
 MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE
-ON_ERROR = 'CONTINUE'
-FORCE = TRUE;
+ON_ERROR = 'CONTINUE' --skip small formatting errors
+FORCE = TRUE; --force reload of data, even if it has already been loaded before
+
+
 
 -- Create reviews_raw (bronze layer) table in snowflake
 CREATE OR REPLACE TABLE reviews_raw (
@@ -110,12 +114,21 @@ CREATE OR REPLACE TABLE reviews_raw (
     comments STRING
 );
 
+SET reviews_regex = CONCAT('.*', $file_date, '/reviews.csv.gz');
+
+-- Clear the table
+TRUNCATE TABLE reviews_raw;
+
 --Load contents into reviews_raw table
 COPY INTO reviews_raw
-FROM @airbnb_toronto_stage/IDENTIFIER($file_date)/reviews.csv.gz
+FROM @airbnb_toronto_stage
+PATTERN = $reviews_regex
 FILE_FORMAT = (FORMAT_NAME = 'airbnb_csv_gz')
 MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE
-ON_ERROR = 'CONTINUE'; --skip small formatting errors
+ON_ERROR = 'CONTINUE'
+FORCE = TRUE;
+
+
 
 --Create short term rental registraion raw (bronze layer) data table in snowflake
 CREATE OR REPLACE TABLE str_reg_raw (
@@ -129,9 +142,16 @@ CREATE OR REPLACE TABLE str_reg_raw (
     ward_name STRING
 );
 
+SET str_reg_regex = CONCAT('.*', $file_date, '/short-term-rental-registrations-data.csv');
+
+--Clear the table
+TRUNCATE TABLE str_reg_raw;
+
 --Load contents into str_reg_raw table
 COPY INTO str_reg_raw
-FROM @airbnb_toronto_stage/IDENTIFIER($file_date)/short-term-rental-registrations-data.csv
+FROM @airbnb_toronto_stage
+PATTERN = $str_reg_regex
 FILE_FORMAT = (FORMAT_NAME = 'toronto_standard_csv')
 MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE
-ON_ERROR = 'CONTINUE'; --skip small formatting errors
+ON_ERROR = 'CONTINUE'
+FORCE = TRUE; 
