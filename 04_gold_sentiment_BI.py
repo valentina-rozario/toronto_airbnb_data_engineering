@@ -104,31 +104,8 @@ def run_gold_pipeline(session):
     print("Gold Listings table refreshed.")
 
 
-#Configure Snowflake credentials
 def get_params():
-    # Try to get credentials from GitHub environment variables first
-    account = os.getenv('SNOW_ACCOUNT')
-    user = os.getenv('SNOW_USER')
-    password = os.getenv('SNOW_PASS')
-
-    # If they are missing use the local file
-    if not account or not password:
-        from connection_config import params
-        return params
-    
-    # If they ARE present, build the dictionary manually
-    return {
-        "account": account,
-        "user": user,
-        "password": password,
-        "warehouse": "COMPUTE_WH",
-        "database": "AIRBNB_PROJECT",
-        "schema": "GOLD"
-    }
-
-
-def get_params():
-    # Try to get credentials from GitHub environment variables first
+    # Try to get credentials from GitHub environment variables or .env file
     user = os.getenv('SNOWFLAKE_USER')
     password = os.getenv('SNOWFLAKE_PASSWORD')
     account = os.getenv('SNOWFLAKE_ACCOUNT')
