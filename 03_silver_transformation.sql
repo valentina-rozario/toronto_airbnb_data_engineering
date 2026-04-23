@@ -10,7 +10,7 @@ USE SCHEMA silver;
 -- Create silver listings table
 CREATE OR REPLACE TABLE airbnb_project.silver.listings_silver AS
 SELECT
-    id,
+    id AS listing_id,
     listing_url,
     TO_DATE(last_scraped) AS scraped_date,
     name,
