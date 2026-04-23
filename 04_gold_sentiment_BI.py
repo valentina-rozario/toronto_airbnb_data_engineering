@@ -82,7 +82,7 @@ def run_gold_pipeline(session):
     ),
     final_join AS (
         SELECT 
-            l.LISTING_URL, l.HOST_ID, l.HOST_NAME, l.HOST_RESPONSE_TIME,
+            l.LISTING_ID, l.LISTING_URL, l.HOST_ID, l.HOST_NAME, l.HOST_RESPONSE_TIME,
             l.HOST_ACCEPTANCE_RATE, l.HOST_IS_SUPERHOST, l.NEIGHBOURHOOD,
             l.LATITUDE, l.LONGITUDE, l.PROPERTY_TYPE, l.ROOM_TYPE,
             l.ACCOMMODATES, l.PRICE_PER_NIGHT, l.MINIMUM_NIGHTS,
@@ -97,7 +97,7 @@ def run_gold_pipeline(session):
             COALESCE(s.count_negative, 0) AS neg_reviews
         FROM airbnb_project.silver.listings_silver l
         LEFT JOIN airbnb_project.silver.str_reg_silver r ON l.str_license = r.registration_number
-        LEFT JOIN sentiment_counts s ON l.id = s.listing_id
+        LEFT JOIN sentiment_counts s ON l.listing_id = s.listing_id
     )
     SELECT * FROM final_join;
     """).collect()
