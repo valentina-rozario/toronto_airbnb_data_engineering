@@ -147,6 +147,12 @@ Create a `.env` file with AWS and Snowflake credentials.
 7. Connect BI tool such as PowerBI to the Snowflake gold table for analytics
 
 
-## License
+## ⚖️ License & Disclaimer
 
-Add your license here.
+### License
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details. This means you are free to use, modify, and distribute this code as long as the original license and copyright notice are included.
+
+### Disclaimer
+* **For Educational Use Only:** This repository is part of a personal portfolio and is intended for educational purposes. 
+* **Data Accuracy:** Analysis regarding the "unregistered" status of Airbnb listings is based on the presence/absence of license strings in the [Inside Airbnb](http://insideairbnb.com/) dataset. It does not constitute legal proof of non-compliance.
+* **Liability:** The author is not responsible for any costs incurred (AWS/Snowflake), data inaccuracies, or legal actions taken based on the findings of this project. Use the provided ETL scripts at your own risk.
